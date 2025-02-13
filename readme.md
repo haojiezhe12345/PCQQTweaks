@@ -3,7 +3,7 @@
 
 
 ### 显示99+消息具体数量
-`ChatFrameApp.dll`
+`ChatFrameApp.dll` (9.7.23.29394)
 
 查　找: `83 F8 63 76 66`   
 替换为: `83 F8 63 EB 66`
@@ -11,7 +11,7 @@
 局限性: 仅聊天窗口左侧可以显示, 主面板和任务栏预览暂未实现
 
 ### 防撤回
-`IM.dll`
+`IM.dll` (9.7.23.29394)
 
 查　找: `FF 83 C4 28 85 C0 75 34 8D 45 0C C7 45 0C D8 B9`  
 替换为: `FF 83 C4 28 85 C0 90 90 8D 45 0C C7 45 0C D8 B9`
@@ -28,7 +28,9 @@ https://www.52pojie.cn/thread-1008764-1-1.html
 
 
 ### 回复不自动添加@
-`MsgMgr.dll`
+`MsgMgr.dll` (9.7.23.29394)
 
 查　找: `85 C0 74 16 FF 75 F4`  
 替换为: `85 C0 EB 16 FF 75 F4`
+
+教程: [NoReplyAt.md](tutorials/NoReplyAt.md)
