@@ -147,4 +147,62 @@ IDA 的地址和 CE 有点不一样, 我喜欢把二进制复制出来搜索
 
 ## 去除平滑滚动 (消息列表)
 
-稍后更新
+用上面一样的方法**找滚动高度值**, 找出来之后**查找写入**, 给 `GF.dll+105DFB - sub [esi+00000200],ecx` **打断点**
+
+![image](https://github.com/user-attachments/assets/cc81039d-f1e7-4353-b8f0-daf3a965a74c)
+
+易发现**每个滚动 tick 都会触发一次断点**, 而且**每个 tick 滚动的像素数在寄存器 `ecx`**  
+(这里因为是对内存中的值进行减法, 所以往下滚动是减去负数, `FFFF FFE5` 转换为 uint32 是 `-27`)
+
+![image](https://github.com/user-attachments/assets/6775bd37-6d72-49b9-af81-662c74ca4a5b)
+
+这里不做汇编分析了, 直接上 IDA
+
+发现是把 `v16` 赋给内存, `v16` 从 `a3` 来, `a3` 是入参
+
+![image](https://github.com/user-attachments/assets/91885ece-2df0-4ca5-9a5c-faa904a9297a)
+![image](https://github.com/user-attachments/assets/ebb09ee5-0ec2-4b74-abaa-2ce11c65ec06)
+
+但是调用这个函数的地方太多了, 我们还是打断点
+
+![image](https://github.com/user-attachments/assets/3298150c-b2c8-4d6c-92e9-3fb0241eee20)
+
+往上一翻就很明显了, 我们直接研究这个 `v4`
+
+![image](https://github.com/user-attachments/assets/7e53db2c-d538-4472-8047-8ca9605df405)
+
+容易发现 `v4` 前面对 `*(_DWORD *)(this + 596)` 有一个**减法运算**  
+多打几次断点可以看出, **`v4` 是当前 tick 滚动的距离, `this + 596` 存放剩余要滚动的像素数**
+
+那么我们的思路就是让滚动一步到位, 直接把**剩余要滚动的总像素数, 作为传参**
+
+![image](https://github.com/user-attachments/assets/2f1e6026-2116-487b-a922-7ff68cb36200)
+
+把 `cvttsd2si eax, qword ptr [esi+258h]` 改为 `mov eax, [esi+254h]`  
+立即生效了
+
+> 这里插播一个知识:  
+> cvttsd2si 是 `double` 转 `int`, `qword ptr` 是 64 位指针, 跟 `[esi+258h]` 搭配使用  
+> 这里不能只修改地址, 否则类型就出错了, 一开始没留意发现修改之后无法滚动
+
+![~)HGF2L8X5U)5ZB2TQ`(TRM](https://github.com/user-attachments/assets/d761f868-983c-4cab-998f-1d387d5e7c36)
+
+如果你不追求细节, 那么修改到这里其实就可以了
+
+但是修改完之后你再打断点会发现, 虽然滚动一步到位了但还是**重复滚动了好几个 tick, 只不过每次的值都一样**  
+要做完美, 就要把**多余的滚动 tick 去掉**
+
+如果你从头开始打断点就会发现, 当滚动到最后一 tick 时, 这个 `if ( !*(_DWORD *)(this + 592) )` 会进入  
+可以判断这是个**计数器, 指定要滚动多少个 tick 的**
+
+![image](https://github.com/user-attachments/assets/15029e50-c5bc-4e43-8915-9e082a813ee0)
+
+往下翻有一个地方是把 `this + 592` 清零的, 我们试试让它强制执行, 即**第一个 tick 滚动完就将计数器清零**
+
+![image](https://github.com/user-attachments/assets/c180c0c7-cbda-45a4-90fc-2394f9cca664)
+
+调整后打断点实测这个函数**只会触发一次**了
+
+修补完这两个地方之后, 主面板的平滑滚动也没了
+
+**至此完成!**
