@@ -58,3 +58,5 @@ https://www.52pojie.cn/thread-1008764-1-1.html
            ↑
            修改此 64 (十六进制) 为你想要的每次滚动的像素值
 ```
+
+教程: [NoSmoothScroll.md](tutorials/NoSmoothScroll.md)
